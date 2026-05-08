@@ -632,7 +632,7 @@ document.getElementById('sort-select').addEventListener('change', function() {
 
 document.querySelectorAll('.t-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.t-tab').forEach(t => { t.className = 't-tab'; t.style.cssText = t.style.cssText; });
+    document.querySelectorAll('.t-tab').forEach(t => { t.className = 't-tab'; });
     currentType = tab.dataset.type;
     tab.className = currentType === 'all' ? 't-tab active-tall' : 't-tab active';
     renderCards();
