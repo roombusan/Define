@@ -129,7 +129,7 @@
     }
 
     .area-tab.active {
-      background: #1a1a1a;
+      background: var(--tab-color, #1a6fa8);
       color: #fff;
     }
 
@@ -168,26 +168,11 @@
       white-space: nowrap;
     }
 
-    .subtype-tab.active-A {
+    .subtype-tab.active {
       color: #fff;
-      background: #1a6fa8;
-      border-color: #1a6fa8;
-      box-shadow: 0 2px 8px rgba(26, 111, 168, 0.35);
-    }
-
-    .subtype-tab.active-B {
-      color: #fff;
-      background: #E07D3C;
-      border-color: #E07D3C;
-      box-shadow: 0 2px 8px rgba(224, 125, 60, 0.35);
-    }
-
-    .subtype-tab.active-single {
-      color: #fff;
-      background: #1a6fa8;
-      border-color: #1a6fa8;
-      box-shadow: 0 2px 8px rgba(26, 111, 168, 0.35);
-      cursor: default;
+      background: var(--tab-color, #1a6fa8);
+      border-color: var(--tab-color, #1a6fa8);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     }
 
     .txn-tab {
@@ -241,6 +226,12 @@
       font-size: 12px;
       font-weight: 800;
       color: #1a1a1a;
+      white-space: nowrap;
+    }
+
+    .pr-empty {
+      font-size: 11px;
+      color: #bbb;
       white-space: nowrap;
     }
 
@@ -594,8 +585,8 @@
     <!-- 지도 좌상단 오버레이 -->
     <div id="map-overlay-tabs">
       <div id="areaTabs">
-        <div class="area-tab active" data-area="all">전체</div>
-        <div class="area-tab" data-area="24">24평</div>
+        <div class="area-tab" data-area="all">전체</div>
+        <div class="area-tab active" data-area="24">24평</div>
         <div class="area-tab" data-area="31">31평</div>
         <div class="area-break"></div>
         <div class="area-tab" data-area="34">34평</div>
@@ -700,19 +691,26 @@
       '43': { subtypes: ['115'] },
     };
 
-    const SUBTYPE_COLOR = {
+    const AREA_COLOR = {
       'all': '#1a6fa8',
-      '59': '#1a6fa8',
-      '78A': '#1a6fa8',
-      '78B': '#E07D3C',
-      '84A': '#1a6fa8',
-      '84B': '#E07D3C',
-      '100': '#1a6fa8',
-      '115': '#1a6fa8',
+      '24':  '#27AE60',
+      '31':  '#2471A3',
+      '34':  '#E67E22',
+      '39':  '#16A085',
+      '43':  '#CB4335',
     };
 
-    let currentArea = 'all';
-    let currentSubtype = 'all';
+    const SUBTYPE_COLOR = {
+      'all': '#1a6fa8',
+      '59':  '#27AE60',
+      '78A': '#2471A3', '78B': '#7D3C98',
+      '84A': '#E67E22', '84B': '#922B21',
+      '100': '#16A085',
+      '115': '#CB4335',
+    };
+
+    let currentArea = '24';
+    let currentSubtype = '59';
 
     function renderMarkers() {
       const layer = document.getElementById('markers-layer');
@@ -755,15 +753,15 @@
 
       subtypes.forEach(st => {
         const tab = document.createElement('div');
-        const isB = st.endsWith('B');
-        const activeClass = subtypes.length === 1 ? 'active-single' : (isB ? 'active-B' : 'active-A');
-        tab.className = 'subtype-tab' + (currentSubtype === st ? ' ' + activeClass : '');
+        const color = SUBTYPE_COLOR[st] || AREA_COLOR[currentArea] || '#1a6fa8';
+        tab.className = 'subtype-tab' + (currentSubtype === st ? ' active' : '');
+        tab.style.setProperty('--tab-color', color);
         tab.dataset.subtype = st;
         tab.textContent = st;
         if (subtypes.length > 1) {
           tab.addEventListener('click', () => {
-            container.querySelectorAll('.subtype-tab').forEach(t => t.classList.remove('active-A', 'active-B', 'active-single'));
-            tab.classList.add(activeClass);
+            container.querySelectorAll('.subtype-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
             currentSubtype = st;
             renderMarkers();
             updatePriceRange();
@@ -777,10 +775,12 @@
     }
 
     document.querySelectorAll('.area-tab').forEach(tab => {
+      const area = tab.dataset.area;
+      tab.style.setProperty('--tab-color', AREA_COLOR[area] || '#1a6fa8');
       tab.addEventListener('click', () => {
         document.querySelectorAll('.area-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-        currentArea = tab.dataset.area;
+        currentArea = area;
         const conf = areaConfig[currentArea];
         if (conf && conf.subtypes && !conf.subtypes.includes(currentSubtype)) {
           currentSubtype = conf.subtypes[0];
@@ -837,6 +837,7 @@
     }
 
     let allListings = [];
+    let csvLoaded = false;
     let currentTxn = 'sale';
 
     function fmt(v) {
@@ -869,6 +870,8 @@
           const max = Math.max(...items.map(x => x.rent));
           const txt = min === max ? `월 ${fmtMan(min)}` : `월 ${fmtMan(min)} ~ ${fmtMan(max)}`;
           html = `<div class="pr-row"><span class="pr-val">${txt}</span></div>`;
+        } else if (csvLoaded) {
+          html = `<div class="pr-row"><span class="pr-empty">매물 없음</span></div>`;
         }
       } else {
         const prices = allListings
@@ -879,6 +882,8 @@
           const max = Math.max(...prices);
           const txt = min === max ? fmt(min) : `${fmt(min)} ~ ${fmt(max)}`;
           html = `<div class="pr-row"><span class="pr-val">${txt}</span></div>`;
+        } else if (csvLoaded) {
+          html = `<div class="pr-row"><span class="pr-empty">매물 없음</span></div>`;
         }
       }
 
@@ -903,6 +908,7 @@
       } catch (e) {
         console.error('CSV 로드 실패', e);
       }
+      csvLoaded = true;
       renderSubtabs();
     })();
   </script>
