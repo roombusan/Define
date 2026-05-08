@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>매물 리스트 — 광안드파인</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f7f7f9;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────── */
+    .header {
+      background: #1a6fa8;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-back { font-size: 24px; cursor: pointer; margin-right: 8px; line-height: 1; }
+    .header-title { flex: 1; font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+    .header-call {
+      display: flex; align-items: center; gap: 5px;
+      text-decoration: none; color: white;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px; padding: 5px 12px 5px 9px;
+      white-space: nowrap;
+    }
+    .header-call .call-text { font-size: 13px; font-weight: 700; }
+
+    /* ── Dong selector ──────────────── */
+    .dong-btn {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #e0e0e2;
+      background: #f7f7f9;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      max-width: 100%;
+    }
+    .dong-btn.has-selection {
+      border-color: #1a6fa8;
+      background: #e8f2fa;
+      color: #1a6fa8;
+    }
+    .dong-btn-arrow { font-size: 10px; opacity: 0.5; flex-shrink: 0; }
+    .dong-btn-text  { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .dong-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 16px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+      padding: 8px;
+      z-index: 200;
+      min-width: 220px;
+    }
+    .dong-panel.open { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dong-chip {
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #f0f0f2;
+      color: #888;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dong-chip.selected { background: #1a6fa8; color: #fff; }
+    .dong-chip[data-dong="all"].selected { background: #1a1a1a; }
+
+    /* ── Filter tabs ─────────────────── */
+    .filter-bar {
+      background: #fff;
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 49px;
+      z-index: 91;
+      overflow: visible;
+    }
+    .f-tab {
+      padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      cursor: pointer; background: #f0f0f2; color: #888; transition: all 0.15s;
+    }
+    .f-tab.active-all   { background: #1a1a1a; color: #fff; }
+    .f-tab.active-sale  { background: #1a6fa8; color: #fff; }
+    .f-tab.active-lease { background: #2E9B87; color: #fff; }
+    .f-tab.active-rent  { background: #E07D3C; color: #fff; }
+
+    /* ── Type filter bar ─────────────────── */
+    .type-bar {
+      background: #fff;
+      padding: 8px 16px 10px;
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 92px;
+      z-index: 89;
+    }
+    .t-tab {
+      padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 700;
+      cursor: pointer; background: #f0f0f2; color: #aaa; transition: all 0.15s;
+    }
+    .t-tab.active-tall { background: #1a1a1a; color: #fff; }
+    .t-tab.active-tA   { background: #1a6fa8; color: #fff; }
+
+    .sort-select {
+      margin-left: auto;
+      padding: 5px 8px;
+      border-radius: 10px;
+      border: 1.5px solid #e0e0e2;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      background: #f7f7f9;
+      cursor: pointer;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+      padding-right: 22px;
+    }
+
+    /* ── Count bar ───────────────────── */
+    .count-bar { padding: 10px 16px 6px; font-size: 12px; color: #999; }
+
+    /* ── Card list ───────────────────── */
+    .card-list { padding: 0 12px 40px; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border-left: 4px solid transparent;
+      transition: transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card:active { transform: scale(0.98); }
+    .card.c-sale  { border-left-color: #1a6fa8; }
+    .card.c-lease { border-left-color: #2E9B87; }
+    .card.c-rent  { border-left-color: #E07D3C; }
+    .card.c-mixed { border-left-color: #6a3da8; }
+
+    .card-left { flex: 1; min-width: 0; }
+    .card-row1 { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+
+    .dong-badge {
+      background: #e8f2fa; color: #1a6fa8;
+      border-radius: 6px; padding: 2px 8px;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .floor-text { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+    .type-badge { border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .type-badge.tA { background: #f0f0f2; color: #555; }
+
+    .card-row2 { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+
+    .txn-badge { border-radius: 5px; padding: 2px 9px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .txn-badge.sale  { background: #dbeeff; color: #1a6fa8; }
+    .txn-badge.lease { background: #e0f5f1; color: #2E9B87; }
+    .txn-badge.rent  { background: #fdf0e6; color: #E07D3C; }
+
+    .card-right { text-align: right; flex-shrink: 0; }
+    .price-main { font-size: 16px; font-weight: 800; line-height: 1.25; }
+    .price-main.p-sale  { color: #1a6fa8; }
+    .price-main.p-lease { color: #2E9B87; }
+    .price-main.p-rent  { color: #E07D3C; }
+    .price-sub { font-size: 11px; color: #2E9B87; font-weight: 600; margin-top: 2px; }
+
+    .empty { text-align: center; padding: 60px 20px; color: #bbb; font-size: 14px; }
+
+    /* ── Popup overlay ───────────────── */
+    #popup-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    #popup-overlay.show { display: flex; }
+
+    #popup-box {
+      background: #fff; border-radius: 16px;
+      padding: 20px 22px 18px; width: 288px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+    }
+    .popup-title {
+      font-size: 15px; font-weight: 800; color: #1a1a1a;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
+    }
+    .popup-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
+    .popup-label { font-size: 13px; color: #888; font-weight: 500; }
+    .popup-val   { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+    .popup-val.pos { color: #E07D3C; }
+    .popup-val.neg { color: #2E9B87; }
+    .popup-divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+    .popup-total-row { display: flex; justify-content: space-between; align-items: center; }
+    .popup-total-label { font-size: 13px; font-weight: 700; color: #555; }
+    .popup-total-val   { font-size: 18px; font-weight: 800; color: #1a6fa8; }
+    .popup-jeonse-wrap {
+      margin-top: 8px; background: #e8f9f4; border-radius: 9px;
+      padding: 9px 12px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .popup-jeonse-label { font-size: 12px; color: #2E9B87; font-weight: 600; }
+    .popup-jeonse-val   { font-size: 15px; color: #2E9B87; font-weight: 800; }
+    .popup-rent-wrap {
+      margin-top: 8px; background: #fdf0e6; border-radius: 9px;
+      padding: 9px 12px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .popup-rent-row { display: flex; justify-content: space-between; align-items: center; }
+    .popup-rent-label { font-size: 12px; color: #E07D3C; font-weight: 600; }
+    .popup-rent-val   { font-size: 15px; color: #E07D3C; font-weight: 800; }
+    .popup-close {
+      width: 100%; margin-top: 16px; padding: 11px; border-radius: 9px;
+      background: #e8f2fa; color: #1a6fa8;
+      font-size: 14px; font-weight: 700; border: none; cursor: pointer;
+    }
+    .popup-close:active { background: #c5dff7; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-back" onclick="history.back()">‹</div>
+  <div class="header-title">광안드파인 매물</div>
+  <a class="header-call" href="tel:010-6402-2328">
+    <span>📞</span>
+    <span class="call-text">바로 문의</span>
+  </a>
+</div>
+
+<div class="filter-bar" id="dong-bar">
+  <div class="f-tab active-all" data-filter="all">전체</div>
+  <div class="f-tab" data-filter="sale">매매</div>
+  <div class="f-tab" data-filter="lease">전세</div>
+  <div class="f-tab" data-filter="rent">월세</div>
+  <button class="dong-btn" id="dong-btn">
+    <span class="dong-btn-text" id="dong-btn-text">동 선택</span>
+    <span class="dong-btn-arrow">▾</span>
+  </button>
+  <div class="dong-panel" id="dong-panel">
+    <div class="dong-chip selected" data-dong="all">전체</div>
+    <div class="dong-chip" data-dong="101">101동</div>
+    <div class="dong-chip" data-dong="102">102동</div>
+    <div class="dong-chip" data-dong="103">103동</div>
+    <div class="dong-chip" data-dong="104">104동</div>
+    <div class="dong-chip" data-dong="105">105동</div>
+    <div class="dong-chip" data-dong="106">106동</div>
+    <div class="dong-chip" data-dong="107">107동</div>
+    <div class="dong-chip" data-dong="108">108동</div>
+    <div class="dong-chip" data-dong="109">109동</div>
+  </div>
+</div>
+
+<div class="type-bar">
+  <div class="t-tab active-tall" data-type="all">전체</div>
+  <div class="t-tab" data-type="A">A형</div>
+  <select class="sort-select" id="sort-select">
+    <option value="">정렬 방식</option>
+    <option value="price-desc">금액 높은 순</option>
+    <option value="price-asc">금액 낮은 순</option>
+    <option value="floor-desc">층수 높은 순</option>
+    <option value="floor-asc">층수 낮은 순</option>
+  </select>
+</div>
+
+<div class="count-bar" id="count-bar"></div>
+<div class="card-list" id="card-list"></div>
+
+<div id="popup-overlay">
+  <div id="popup-box">
+    <div class="popup-title" id="popup-title"></div>
+    <div id="popup-content"></div>
+    <button class="popup-close" onclick="closePopup()">닫기</button>
+  </div>
+</div>
+
+<script>
+function fmt(manwon) {
+  if (manwon == null) return '-';
+  const n = parseInt(String(manwon).replace(/,/g, ''));
+  if (isNaN(n)) return '-';
+  const eok = Math.floor(n / 10000);
+  const rem  = n % 10000;
+  if (eok === 0) return `${rem.toLocaleString()}만`;
+  if (rem  === 0) return `${eok}억`;
+  return `${eok}억 ${rem.toLocaleString()}만`;
+}
+
+function fmtPremium(val) {
+  if (val == null) return '-';
+  const n = parseInt(String(val).replace(/,/g, ''));
+  if (isNaN(n)) return '-';
+  if (n === 0) return '0';
+  return `${n > 0 ? '+' : ''}${n.toLocaleString()}만`;
+}
+
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/1hZtoBvNNNpiZacahHDhu0WPdGrikh-rqp9NXl3Zh4sQ/export?format=csv&gid=662711070';
+
+function parsePrice(s) {
+  if (!s || s.trim() === '') return null;
+  s = String(s).trim().replace(/,/g, '');
+  const m = s.match(/^(\d+)억\s*(\d+)?/);
+  if (m) return parseInt(m[1]) * 10000 + (m[2] ? parseInt(m[2]) : 0);
+  const n = parseInt(s);
+  return isNaN(n) ? null : n;
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (const ch of lines[i]) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    if (cols.length < 8) continue;
+    // col[1]=동, col[2]=gbn, col[3]=minPrice, col[5]=type, col[6]=floor, col[7]=direction
+    const dongVal = parseInt(String(cols[1]).replace(/동$/, '').trim());
+    if (!dongVal || isNaN(dongVal)) continue;
+    const floorVal = parseInt(String(cols[6]).trim());
+    if (!floorVal || isNaN(floorVal)) continue;
+    const gbn = cols[2].trim();
+    if (!gbn) continue;
+    const type = cols[5].trim();
+    if (!type) continue;
+    const dir = cols[7].trim().replace(/향$/, '');
+    if (gbn === '월세') {
+      const parts = String(cols[3]).split('/');
+      rows.push({
+        gbn: '월세', dong: dongVal, floor: floorVal, type, dir,
+        deposit: parsePrice(parts[0]),
+        rent: parseInt(String(parts[1] || '0').replace(/,/g, '')),
+        price: null,
+      });
+    } else {
+      rows.push({
+        gbn, dong: dongVal, floor: floorVal, type, dir,
+        price: parsePrice(cols[3]),
+        deposit: null, rent: null,
+      });
+    }
+  }
+  return rows;
+}
+
+let listings = [];
+
+function matchFilter(item, filter) {
+  if (filter === 'all')   return true;
+  if (filter === 'sale')  return item.gbn === '매매';
+  if (filter === 'lease') return item.gbn === '전세';
+  if (filter === 'rent')  return item.gbn === '월세';
+  return true;
+}
+
+function cardTheme(gbn) {
+  if (gbn === '매매') return 'sale';
+  if (gbn === '전세') return 'lease';
+  if (gbn === '월세') return 'rent';
+  return 'mixed';
+}
+
+let currentFilter = 'all';
+let currentType   = 'all';
+let currentSort   = '';
+let selectedDongs = new Set();
+
+function renderCards() {
+  const list     = document.getElementById('card-list');
+  const countBar = document.getElementById('count-bar');
+  list.innerHTML = '';
+
+  const filtered = listings
+    .filter(item =>
+      matchFilter(item, currentFilter) &&
+      (currentType === 'all' || item.type === currentType) &&
+      (selectedDongs.size === 0 || selectedDongs.has(String(item.dong)))
+    )
+    .sort((a, b) => {
+      if (!currentSort) return 0;
+      const priceA = a.price ?? a.deposit ?? 0;
+      const priceB = b.price ?? b.deposit ?? 0;
+      if (currentSort === 'price-desc') return priceB - priceA;
+      if (currentSort === 'price-asc')  return priceA - priceB;
+      if (currentSort === 'floor-desc') return (b.floor ?? 0) - (a.floor ?? 0);
+      if (currentSort === 'floor-asc')  return (a.floor ?? 0) - (b.floor ?? 0);
+      return 0;
+    });
+  countBar.textContent = `총 ${filtered.length}건`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">매물이 없습니다</div>';
+    return;
+  }
+
+  filtered.forEach(item => {
+    const theme = cardTheme(item.gbn);
+    const floorDisplay = item.floor + '층';
+    const dirDisplay = item.dir ? ` · ${item.dir}` : '';
+
+    let priceMain = '', priceMainClass = '', priceSub = '';
+    if (item.gbn === '월세') {
+      priceMain      = `${fmt(item.deposit)} / 월 ${(item.rent ?? 0).toLocaleString()}만`;
+      priceMainClass = 'p-rent';
+    } else if (item.gbn === '매매') {
+      priceMain      = fmt(item.price);
+      priceMainClass = 'p-sale';
+    } else if (item.gbn === '전세') {
+      priceMain      = fmt(item.price);
+      priceMainClass = 'p-lease';
+    }
+
+    let badges = '';
+    if (item.gbn === '월세') badges += `<span class="txn-badge rent">월세</span>`;
+    if (item.gbn === '매매') badges += `<span class="txn-badge sale">매매</span>`;
+    if (item.gbn === '전세') badges += `<span class="txn-badge lease">전세</span>`;
+
+    const card = document.createElement('div');
+    card.className = `card c-${theme}`;
+    card.innerHTML = `
+      <div class="card-left">
+        <div class="card-row1">
+          <span class="dong-badge">${item.dong}동</span>
+          <span class="floor-text">${floorDisplay}${dirDisplay}</span>
+          <span class="type-badge t${item.type}">${item.type}형</span>
+        </div>
+        <div class="card-row2">${badges}</div>
+      </div>
+      <div class="card-right">
+        <div class="price-main ${priceMainClass}">${priceMain}</div>
+        ${priceSub ? `<div class="price-sub">${priceSub}</div>` : ''}
+      </div>
+    `;
+    card.addEventListener('click', () => openPopup(item));
+    list.appendChild(card);
+  });
+}
+
+function openPopup(item) {
+  const overlay = document.getElementById('popup-overlay');
+  const titleEl = document.getElementById('popup-title');
+  const content = document.getElementById('popup-content');
+  const dirDisplay = item.dir ? ` · ${item.dir}` : '';
+
+  titleEl.innerHTML =
+    `<span style="color:#1a6fa8">${item.dong}동</span>` +
+    `<span>${item.floor}층${dirDisplay}</span>` +
+    `<span style="color:#1a6fa8;font-size:12px;font-weight:700">${item.type}형</span>`;
+
+  let html = '';
+  if (item.gbn === '월세') {
+    html += `
+      <div class="popup-rent-wrap">
+        <div class="popup-rent-row"><span class="popup-rent-label">보증금</span><span class="popup-rent-val">${fmt(item.deposit)}</span></div>
+        <div class="popup-rent-row"><span class="popup-rent-label">월세</span><span class="popup-rent-val">월 ${(item.rent ?? 0).toLocaleString()}만원</span></div>
+      </div>`;
+  } else if (item.gbn === '매매') {
+    html += `
+      <div class="popup-total-row"><span class="popup-total-label">매매가</span><span class="popup-total-val">${fmt(item.price)}</span></div>`;
+  } else if (item.gbn === '전세') {
+    html += `
+      <div class="popup-jeonse-wrap"><span class="popup-jeonse-label">전세금</span><span class="popup-jeonse-val">${fmt(item.price)}</span></div>`;
+  }
+  if (!html) {
+    html = '<div style="color:#bbb;font-size:13px;padding:8px 0;text-align:center">상세 정보 없음</div>';
+  }
+
+  content.innerHTML = html;
+  overlay.classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('show');
+}
+
+document.getElementById('popup-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closePopup();
+});
+
+document.querySelectorAll('.f-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.f-tab').forEach(t => { t.className = 'f-tab'; });
+    tab.className = `f-tab active-${tab.dataset.filter}`;
+    currentFilter = tab.dataset.filter;
+    renderCards();
+  });
+});
+
+const dongBtn     = document.getElementById('dong-btn');
+const dongPanel   = document.getElementById('dong-panel');
+const dongBtnText = document.getElementById('dong-btn-text');
+
+dongBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  dongPanel.classList.toggle('open');
+});
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('dong-bar').contains(e.target)) {
+    dongPanel.classList.remove('open');
+  }
+});
+
+function updateDongBtn() {
+  if (selectedDongs.size === 0) {
+    dongBtnText.textContent = '동 선택';
+    dongBtn.classList.remove('has-selection');
+  } else {
+    const labels = [...selectedDongs].sort().map(d => d + '동');
+    dongBtnText.textContent = labels.join(' · ');
+    dongBtn.classList.add('has-selection');
+  }
+}
+
+document.querySelectorAll('.dong-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const val = chip.dataset.dong;
+    if (val === 'all') {
+      selectedDongs.clear();
+      document.querySelectorAll('.dong-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    } else {
+      document.querySelector('.dong-chip[data-dong="all"]').classList.remove('selected');
+      chip.classList.toggle('selected');
+      if (chip.classList.contains('selected')) {
+        selectedDongs.add(val);
+      } else {
+        selectedDongs.delete(val);
+      }
+      if (selectedDongs.size === 0) {
+        document.querySelector('.dong-chip[data-dong="all"]').classList.add('selected');
+      }
+    }
+    updateDongBtn();
+    renderCards();
+  });
+});
+
+document.getElementById('sort-select').addEventListener('change', function() {
+  currentSort = this.value;
+  renderCards();
+});
+
+document.querySelectorAll('.t-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.t-tab').forEach(t => { t.className = 't-tab'; });
+    currentType = tab.dataset.type;
+    tab.className = `t-tab active-t${currentType === 'all' ? 'all' : currentType}`;
+    renderCards();
+  });
+});
+
+(async function init() {
+  document.getElementById('card-list').innerHTML = '<div style="padding:30px;text-align:center;color:#aaa;">매물 불러오는 중...</div>';
+  try {
+    const resp = await fetch(CSV_URL);
+    const text = await resp.text();
+    listings = parseCSV(text);
+  } catch (e) {
+    document.getElementById('card-list').innerHTML = '<div style="padding:30px;text-align:center;color:#e00;">데이터를 불러오지 못했습니다.</div>';
+    return;
+  }
+  renderCards();
+})();
+</script>
+</body>
+</html>

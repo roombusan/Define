@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>광안드파인</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #fff;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ─────────────────────── */
+    .header {
+      background: #1a6fa8;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+    }
+
+    .header-back {
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+      margin-right: 2px;
+    }
+
+    .header-title {
+      flex: 1;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .header-call {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      color: white;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 5px 12px 5px 9px;
+      white-space: nowrap;
+    }
+
+    .header-call .call-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .header-call .call-text {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* ── Map container ───────────────── */
+    #map-container {
+      width: 100%;
+      position: relative;
+      background: #ccc;
+      overflow: hidden;
+    }
+
+    #site-plan {
+      width: 100%;
+      display: block;
+    }
+
+    #site-plan-fallback {
+      display: none;
+      width: 100%;
+      padding: 100px 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #888;
+      background: #f0f0f0;
+      line-height: 1.8;
+    }
+
+    /* ── 지도 위 탭 오버레이 ─────────── */
+    #map-overlay-tabs {
+      position: absolute;
+      top: 35%;
+      left: 3px;
+      transform: translateY(-50%);
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.90);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 14px;
+      padding: 9px 11px 8px;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.18);
+    }
+
+    #areaTabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-bottom: 4px;
+    }
+
+    .area-break {
+      width: 100%;
+      height: 0;
+    }
+
+    .area-tab {
+      padding: 4px 7px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #bbb;
+      background: transparent;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    .area-tab.active {
+      background: #1a1a1a;
+      color: #fff;
+    }
+
+    #txnTabsRow {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 4px;
+    }
+
+    #overlay-bottom {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    #subtypeTabs {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .subtype-tab {
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #bbb;
+      background: #f0f0f2;
+      border: 1.5px solid #e0e0e2;
+      line-height: 1;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .subtype-tab.active-A {
+      color: #fff;
+      background: #1a6fa8;
+      border-color: #1a6fa8;
+      box-shadow: 0 2px 8px rgba(26, 111, 168, 0.35);
+    }
+
+    .subtype-tab.active-B {
+      color: #fff;
+      background: #E07D3C;
+      border-color: #E07D3C;
+      box-shadow: 0 2px 8px rgba(224, 125, 60, 0.35);
+    }
+
+    .subtype-tab.active-single {
+      color: #fff;
+      background: #1a6fa8;
+      border-color: #1a6fa8;
+      box-shadow: 0 2px 8px rgba(26, 111, 168, 0.35);
+      cursor: default;
+    }
+
+    .txn-tab {
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f0f0f2;
+      color: #aaa;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      line-height: 1;
+    }
+
+    .txn-tab.active-sale {
+      background: #1a6fa8;
+      color: #fff;
+    }
+
+    .txn-tab.active-lease {
+      background: #2E9B87;
+      color: #fff;
+    }
+
+    .txn-tab.active-rent {
+      background: #E07D3C;
+      color: #fff;
+    }
+
+    #priceRange {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .pr-row {
+      display: flex;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .pr-label {
+      font-size: 10px;
+      color: #aaa;
+    }
+
+    .pr-val {
+      font-size: 12px;
+      font-weight: 800;
+      color: #1a1a1a;
+      white-space: nowrap;
+    }
+
+    /* ── 마커 레이어 ─────────────────── */
+    #markers-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Building marker ─────────────── */
+    @keyframes heartbeat {
+      0% {
+        transform: translate(-50%, calc(-100% - 19px)) scale(1);
+      }
+
+      14% {
+        transform: translate(-50%, calc(-100% - 19px)) scale(1.18);
+      }
+
+      28% {
+        transform: translate(-50%, calc(-100% - 19px)) scale(1);
+      }
+
+      42% {
+        transform: translate(-50%, calc(-100% - 19px)) scale(1.10);
+      }
+
+      70% {
+        transform: translate(-50%, calc(-100% - 19px)) scale(1);
+      }
+
+      100% {
+        transform: translate(-50%, calc(-100% - 19px)) scale(1);
+      }
+    }
+
+    .bld-marker {
+      --marker-bg: #1a6fa8;
+      position: absolute;
+      transform: translate(-50%, calc(-100% - 19px));
+      background: var(--marker-bg);
+      color: white;
+      border-radius: 9px;
+      padding: 6px 12px;
+      text-align: center;
+      white-space: nowrap;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      line-height: 1.35;
+      cursor: pointer;
+      animation: heartbeat 1.6s ease-in-out infinite;
+    }
+
+    .bld-marker:active {
+      animation: none;
+      transform: translate(-50%, calc(-100% - 19px)) scale(0.92);
+    }
+
+    .bld-marker .dong {
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.85;
+    }
+
+    .bld-marker .bld-num {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .bld-marker::after {
+      content: '';
+      position: absolute;
+      bottom: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 9px solid transparent;
+      border-top: 9px solid var(--marker-bg);
+      border-bottom: none;
+    }
+
+    /* 화살표 위쪽 마커 */
+    .bld-marker.arrow-up {
+      transform: translate(-50%, -1px);
+    }
+
+    .bld-marker.arrow-up:active {
+      transform: translate(-50%, -1px) scale(0.92);
+    }
+
+    @keyframes heartbeat-up {
+      0% {
+        transform: translate(-50%, -1px) scale(1);
+      }
+
+      14% {
+        transform: translate(-50%, -1px) scale(1.18);
+      }
+
+      28% {
+        transform: translate(-50%, -1px) scale(1);
+      }
+
+      42% {
+        transform: translate(-50%, -1px) scale(1.10);
+      }
+
+      70% {
+        transform: translate(-50%, -1px) scale(1);
+      }
+
+      100% {
+        transform: translate(-50%, -1px) scale(1);
+      }
+    }
+
+    .bld-marker.arrow-up {
+      animation: heartbeat-up 1.6s ease-in-out infinite;
+    }
+
+    .bld-marker.arrow-up::after {
+      bottom: auto;
+      top: -9px;
+      border-top: none;
+      border-bottom: 9px solid var(--marker-bg);
+    }
+
+    /* 화살표 왼쪽 마커 */
+    .bld-marker.arrow-left {
+      transform: translate(12px, -50%);
+    }
+
+    .bld-marker.arrow-left:active {
+      transform: translate(12px, -50%) scale(0.92);
+    }
+
+    @keyframes heartbeat-left {
+      0% {
+        transform: translate(12px, -50%) scale(1);
+      }
+
+      14% {
+        transform: translate(12px, -50%) scale(1.18);
+      }
+
+      28% {
+        transform: translate(12px, -50%) scale(1);
+      }
+
+      42% {
+        transform: translate(12px, -50%) scale(1.10);
+      }
+
+      70% {
+        transform: translate(12px, -50%) scale(1);
+      }
+
+      100% {
+        transform: translate(12px, -50%) scale(1);
+      }
+    }
+
+    .bld-marker.arrow-left {
+      animation: heartbeat-left 1.6s ease-in-out infinite;
+    }
+
+    .bld-marker.arrow-left::after {
+      bottom: auto;
+      left: -9px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+      border-right: 9px solid var(--marker-bg);
+      border-left: none;
+    }
+
+    /* ── 단지 정보 ───────────────────── */
+    .danji-info {
+      background: #fff;
+      padding: 16px 16px 4px;
+    }
+
+    .danji-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 3px;
+    }
+
+    .danji-addr {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 14px;
+    }
+
+    .danji-stats {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .stat-item {
+      flex: 1;
+      background: #f7f7f9;
+      border-radius: 10px;
+      padding: 10px 0;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1a1a1a;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    .danji-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding-bottom: 16px;
+    }
+
+    .dtag {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #e8f2fa;
+      color: #1a6fa8;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .dtag .ti {
+      font-size: 14px;
+    }
+
+    /* ── Bottom ──────────────────────── */
+    .view-btn-wrap {
+      padding: 4px 16px 16px;
+    }
+
+    .view-btn {
+      width: 100%;
+      padding: 15px;
+      border: 1.5px solid #1a6fa8;
+      border-radius: 10px;
+      color: #1a6fa8;
+      background: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .view-btn:active {
+      background: #e8f2fa;
+    }
+
+    /* 사무소 정보 푸터 */
+    .office-footer {
+      margin: 0 16px 32px;
+      background: linear-gradient(135deg, #f0f7fd 0%, #e8f2fa 100%);
+      border: 1.5px solid #c0d8ee;
+      border-radius: 16px;
+      padding: 20px 20px 18px;
+    }
+
+    .office-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 14px;
+      letter-spacing: -0.3px;
+    }
+
+    .office-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .office-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #444;
+    }
+
+    .office-row .o-icon {
+      font-size: 15px;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .office-row .o-label {
+      color: #999;
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 44px;
+    }
+
+    .office-row .o-val {
+      font-weight: 600;
+      color: #222;
+    }
+
+    .office-row .o-val.phone {
+      color: #1a6fa8;
+      font-weight: 700;
+    }
+
+    .office-divider {
+      height: 1px;
+      background: #c0d8ee;
+      margin: 12px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Header ──────────────────────────── -->
+  <div class="header">
+    <div class="header-back">‹</div>
+    <div class="header-title">광안드파인 매물리스트</div>
+    <a class="header-call" href="tel:010-6402-2328">
+      <span class="call-icon">📞</span>
+      <span class="call-text">바로 문의</span>
+    </a>
+  </div>
+
+  <!-- ── Map ──────────────────────────────── -->
+  <div id="map-container">
+    <img id="site-plan" src="광안드파인 단지배치도.png" alt="단지 배치도"
+      onerror="this.style.display='none'; document.getElementById('site-plan-fallback').style.display='block';">
+    <div id="site-plan-fallback">
+      📂 <strong>광안드파인 단지배치도.png</strong> 파일을<br>이 폴더에 저장해주세요
+    </div>
+
+    <!-- 지도 좌상단 오버레이 -->
+    <div id="map-overlay-tabs">
+      <div id="areaTabs">
+        <div class="area-tab active" data-area="all">전체</div>
+        <div class="area-tab" data-area="24">24평</div>
+        <div class="area-tab" data-area="31">31평</div>
+        <div class="area-break"></div>
+        <div class="area-tab" data-area="34">34평</div>
+        <div class="area-tab" data-area="39">39평</div>
+        <div class="area-tab" data-area="43">43평</div>
+      </div>
+      <div id="txnTabsRow">
+        <div class="txn-tab active-sale" data-txn="sale">매매</div>
+        <div class="txn-tab" data-txn="lease">전세</div>
+        <div class="txn-tab" data-txn="rent">월세</div>
+      </div>
+      <div id="overlay-bottom" style="display:none">
+        <div id="subtypeTabs"></div>
+        <div id="priceRange"></div>
+      </div>
+    </div>
+
+    <div id="markers-layer"></div>
+  </div>
+
+  <!-- ── 전체 매물 버튼 ────────────────────── -->
+  <div class="view-btn-wrap">
+    <button class="view-btn" onclick="location.href='danji.html'">이 단지 전체 매물 보기</button>
+  </div>
+
+  <!-- ── 단지 정보 ─────────────────────────── -->
+  <div class="danji-info">
+    <div class="danji-name">광안드파인</div>
+    <div class="danji-addr">부산시 수영구 광안동</div>
+
+    <div class="danji-stats">
+      <div class="stat-item">
+        <div class="stat-val">1,233세대</div>
+        <div class="stat-label">총 세대수</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">1,672대</div>
+        <div class="stat-label">주차대수</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">1.35대</div>
+        <div class="stat-label">세대당 주차</div>
+      </div>
+    </div>
+
+    <div class="danji-tags">
+      <div class="dtag"><span class="ti">🌊</span> 광안리해수욕장 도보권</div>
+      <div class="dtag"><span class="ti">🚇</span> 광안역·금련산역</div>
+      <div class="dtag"><span class="ti">🏫</span> 동아중·수영중 인접</div>
+      <div class="dtag"><span class="ti">🛒</span> 광안시장·홈플러스</div>
+      <div class="dtag"><span class="ti">🏗️</span> 2026년 입주예정</div>
+    </div>
+  </div>
+
+  <!-- ── 사무소 정보 ─────────────────────────── -->
+  <div class="office-footer">
+    <div class="office-name">더행복공인중개사사무소</div>
+    <div class="office-rows">
+      <div class="office-row">
+        <span class="o-icon">📞</span>
+        <span class="o-label">전화</span>
+        <span class="o-val phone">010-6402-2328</span>
+      </div>
+      <div class="office-divider"></div>
+      <div class="office-row">
+        <span class="o-icon">👤</span>
+        <span class="o-label">대표</span>
+        <span class="o-val">이지훈</span>
+      </div>
+      <div class="office-row">
+        <span class="o-icon">📋</span>
+        <span class="o-label">등록번호</span>
+        <span class="o-val">26500-2026-00034</span>
+      </div>
+      <div class="office-row">
+        <span class="o-icon">📍</span>
+        <span class="o-label">주소</span>
+        <span class="o-val">부산 수영구 광안동 120-261</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const buildings = [
+      { id: 101, types: ['115'], x: 37, y: 72 },
+      { id: 102, types: ['84A', '84B', '100'], x: 34, y: 89, arrowLeft: true },
+      { id: 103, types: ['84A', '84B', '100'], x: 65, y: 89, arrowLeft: true },
+      { id: 104, types: ['84A', '84B', '78A', '78B'], x: 69, y: 75, arrowLeft: true },
+      { id: 105, types: ['84B', '59'], x: 69, y: 61, arrowLeft: true },
+      { id: 106, types: ['84A', '84B', '78A', '78B'], x: 65, y: 45, arrowLeft: true },
+      { id: 107, types: ['84A', '84B', '78A', '78B'], x: 53, y: 29, arrowLeft: true },
+      { id: 108, types: ['84A', '59'], x: 28, y: 22 },
+      { id: 109, types: ['59', '78A', '78B'], x: 50, y: 17, arrowLeft: true, offset: -15 },
+    ];
+
+    const areaConfig = {
+      'all': { subtypes: null },
+      '24': { subtypes: ['59'] },
+      '31': { subtypes: ['78A', '78B'] },
+      '34': { subtypes: ['84A', '84B'] },
+      '39': { subtypes: ['100'] },
+      '43': { subtypes: ['115'] },
+    };
+
+    const SUBTYPE_COLOR = {
+      'all': '#1a6fa8',
+      '59': '#1a6fa8',
+      '78A': '#1a6fa8',
+      '78B': '#E07D3C',
+      '84A': '#1a6fa8',
+      '84B': '#E07D3C',
+      '100': '#1a6fa8',
+      '115': '#1a6fa8',
+    };
+
+    let currentArea = 'all';
+    let currentSubtype = 'all';
+
+    function renderMarkers() {
+      const layer = document.getElementById('markers-layer');
+      layer.innerHTML = '';
+      buildings.forEach(b => {
+        if (currentSubtype !== 'all' && !b.types.includes(currentSubtype)) return;
+        const el = document.createElement('div');
+        let className = 'bld-marker';
+        if (b.arrowUp) className += ' arrow-up';
+        if (b.arrowLeft) className += ' arrow-left';
+        el.className = className;
+        el.style.left = b.x + '%';
+        el.style.top = b.y + '%';
+        if (b.offset) el.style.marginTop = b.offset + 'px';
+        el.style.setProperty('--marker-bg', SUBTYPE_COLOR[currentSubtype] || '#1a6fa8');
+        if (currentSubtype === 'all') {
+          el.innerHTML = `<div class="bld-num">${b.id}동</div>`;
+        } else {
+          el.innerHTML = `<div class="dong">${b.id}동</div><div class="bld-num">${currentSubtype}</div>`;
+        }
+        el.addEventListener('click', () => { location.href = `detail.html?dong=${b.id}`; });
+        layer.appendChild(el);
+      });
+    }
+
+    function renderSubtabs() {
+      const container = document.getElementById('subtypeTabs');
+      container.innerHTML = '';
+
+      const conf = areaConfig[currentArea];
+      if (!conf || !conf.subtypes) {
+        currentSubtype = 'all';
+        renderMarkers();
+        updatePriceRange();
+        return;
+      }
+
+      const subtypes = conf.subtypes;
+      if (!subtypes.includes(currentSubtype)) currentSubtype = subtypes[0];
+
+      subtypes.forEach(st => {
+        const tab = document.createElement('div');
+        const isB = st.endsWith('B');
+        const activeClass = subtypes.length === 1 ? 'active-single' : (isB ? 'active-B' : 'active-A');
+        tab.className = 'subtype-tab' + (currentSubtype === st ? ' ' + activeClass : '');
+        tab.dataset.subtype = st;
+        tab.textContent = st;
+        if (subtypes.length > 1) {
+          tab.addEventListener('click', () => {
+            container.querySelectorAll('.subtype-tab').forEach(t => t.classList.remove('active-A', 'active-B', 'active-single'));
+            tab.classList.add(activeClass);
+            currentSubtype = st;
+            renderMarkers();
+            updatePriceRange();
+          });
+        }
+        container.appendChild(tab);
+      });
+
+      renderMarkers();
+      updatePriceRange();
+    }
+
+    document.querySelectorAll('.area-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.area-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentArea = tab.dataset.area;
+        const conf = areaConfig[currentArea];
+        if (conf && conf.subtypes && !conf.subtypes.includes(currentSubtype)) {
+          currentSubtype = conf.subtypes[0];
+        }
+        renderSubtabs();
+      });
+    });
+
+    // ── 거래유형 탭 + 가격 범위 ─────────────────────────────
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/1hZtoBvNNNpiZacahHDhu0WPdGrikh-rqp9NXl3Zh4sQ/export?format=csv&gid=662711070';
+
+    // 컬럼: 0=단지명, 1=동, 2=종류(매매/전세/월세), 3=최소가격, 4=최대가격, 5=면적, 6=층, 7=방향
+    function parsePrice(s) {
+      if (!s || s.trim() === '') return null;
+      s = s.trim().replace(/,/g, '');
+      const m = s.match(/^(\d+)억\s*(\d+)?/);
+      if (m) return parseInt(m[1]) * 10000 + (m[2] ? parseInt(m[2]) : 0);
+      const n = parseInt(s);
+      return isNaN(n) ? null : n;
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = [];
+        let cur = '', inQ = false;
+        for (const ch of lines[i]) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        cols.push(cur.trim());
+        if (cols.length < 8) continue;
+        const gbn = cols[2].trim();
+        if (!['매매', '전세', '월세'].includes(gbn)) continue;
+        const type = cols[5].trim();
+        if (!type) continue;
+        const minRaw = cols[3].trim();
+        let price = null, deposit = null, rent = null;
+        if (gbn === '월세') {
+          if (minRaw.includes('/')) {
+            const parts = minRaw.split('/');
+            deposit = parsePrice(parts[0]);
+            rent = parseInt(parts[1].replace(/,/g, '').trim());
+            if (isNaN(rent)) rent = null;
+          }
+        } else {
+          price = parsePrice(minRaw);
+        }
+        rows.push({ gbn, type, price, deposit, rent });
+      }
+      return rows;
+    }
+
+    let allListings = [];
+    let currentTxn = 'sale';
+
+    function fmt(v) {
+      if (v == null) return '-';
+      const eok = Math.floor(v / 10000);
+      const rem = v % 10000;
+      if (eok === 0) return `${rem.toLocaleString()}만`;
+      if (rem === 0) return `${eok}억`;
+      return `${eok}억 ${rem.toLocaleString()}만`;
+    }
+
+    function fmtMan(v) { return v.toLocaleString() + '만원'; }
+
+    function updateOverlayBottom() {
+      const bottom = document.getElementById('overlay-bottom');
+      const hasSubs = document.getElementById('subtypeTabs').children.length > 0;
+      const hasPrice = document.getElementById('priceRange').children.length > 0;
+      bottom.style.display = (hasSubs || hasPrice) ? 'flex' : 'none';
+    }
+
+    function updatePriceRange() {
+      const box = document.getElementById('priceRange');
+      const byType = x => currentSubtype === 'all' || x.type === currentSubtype;
+      let html = '';
+
+      if (currentTxn === 'rent') {
+        const items = allListings.filter(x => byType(x) && x.gbn === '월세' && x.rent != null);
+        if (items.length > 0) {
+          const min = Math.min(...items.map(x => x.rent));
+          const max = Math.max(...items.map(x => x.rent));
+          const txt = min === max ? `월 ${fmtMan(min)}` : `월 ${fmtMan(min)} ~ ${fmtMan(max)}`;
+          html = `<div class="pr-row"><span class="pr-val">${txt}</span></div>`;
+        }
+      } else {
+        const prices = allListings
+          .filter(x => byType(x) && x.gbn === (currentTxn === 'sale' ? '매매' : '전세') && x.price != null)
+          .map(x => x.price);
+        if (prices.length > 0) {
+          const min = Math.min(...prices);
+          const max = Math.max(...prices);
+          const txt = min === max ? fmt(min) : `${fmt(min)} ~ ${fmt(max)}`;
+          html = `<div class="pr-row"><span class="pr-val">${txt}</span></div>`;
+        }
+      }
+
+      box.innerHTML = html;
+      updateOverlayBottom();
+    }
+
+    document.querySelectorAll('.txn-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.txn-tab').forEach(t => { t.className = 'txn-tab'; });
+        currentTxn = tab.dataset.txn;
+        tab.className = `txn-tab active-${currentTxn}`;
+        updatePriceRange();
+      });
+    });
+
+    (async function init() {
+      try {
+        const resp = await fetch(CSV_URL);
+        const text = await resp.text();
+        allListings = parseCSV(text);
+      } catch (e) {
+        console.error('CSV 로드 실패', e);
+      }
+      renderSubtabs();
+    })();
+  </script>
+</body>
+
+</html>

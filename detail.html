@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>동호수 정보 — 광안드파인</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f7f7f9;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ─────────────────────── */
+    .header {
+      background: #1a6fa8;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-back { font-size: 24px; cursor: pointer; margin-right: 8px; line-height: 1; }
+    .header-title { flex: 1; font-size: 16px; font-weight: 600; }
+    .header-sub { font-size: 13px; opacity: 0.8; }
+
+    .header-call {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      color: white;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 5px 12px 5px 9px;
+      margin-left: 10px;
+      white-space: nowrap;
+    }
+
+    .header-call .call-text { font-size: 13px; font-weight: 700; }
+
+    /* ── Legend ─────────────────────── */
+    .legend {
+      background: #fff;
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+    }
+
+    .leg { display: flex; align-items: center; gap: 4px; }
+
+    .leg-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .leg-dot.tA   { background: #fafafa; border: 1px solid #ddd; }
+    .leg-dot.sale { background: #1a6fa8; }
+    .leg-dot.lease { background: #2E9B87; }
+    .leg-dot.mixed { background: linear-gradient(to right, #1a6fa8 50%, #2E9B87 50%); }
+
+    .leg-sep { color: #ddd; font-size: 14px; align-self: center; }
+
+    /* ── Grid wrapper ───────────────── */
+    #grid-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+    }
+
+    /* ── Grid table ─────────────────── */
+    #grid {
+      border-collapse: collapse;
+      min-width: 100%;
+      table-layout: fixed;
+    }
+
+    #grid thead th:first-child,
+    #grid tbody td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #f5f5f7;
+    }
+
+    #grid thead th {
+      background: #f5f5f7;
+      font-size: 10px;
+      font-weight: 700;
+      color: #888;
+      text-align: center;
+      padding: 4px 2px;
+      border: 1px solid #e8e8ea;
+      white-space: nowrap;
+      line-height: 1.3;
+    }
+
+    #grid thead th:first-child { width: 40px; color: #666; }
+
+    #grid tbody td {
+      border: 1px solid #e8e8ea;
+      text-align: center;
+      vertical-align: middle;
+      padding: 0;
+      height: 20px;
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    td.floor-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #666;
+      background: #f5f5f7 !important;
+      padding: 0 3px;
+      white-space: nowrap;
+    }
+
+    /* Type backgrounds */
+    td.type-36  { background: #fdf5f0; color: #d0d0d0; }
+    td.type-59  { background: #f0f7ff; color: #c0d0e0; }
+    td.type-78A { background: #ecfdf5; color: #059669; }
+    td.type-78B { background: #fff1f2; color: #e11d48; }
+    td.type-84A { background: #fffdf0; color: #e0d8c0; }
+    td.type-84B { background: #f0faff; color: #c0d0e0; }
+    td.type-100 { background: #fff5f0; color: #e0c8c0; }
+    td.type-115 { background: #f5f0ff; color: #c8c0e0; }
+    td.type-A   { background: #fafafa; color: #bbb; }
+
+    /* Beyond max floor */
+    td.beyond-max { background: #ebebeb; }
+
+    /* 매물 있는 호 셀 */
+    td.listing-sale {
+      background: #1a6fa8 !important;
+      color: #fff; font-weight: 700; cursor: pointer;
+      height: auto; padding: 2px 1px;
+    }
+
+    td.listing-lease {
+      background: #2E9B87 !important;
+      color: #fff; font-weight: 700; cursor: pointer;
+      height: auto; padding: 2px 1px;
+    }
+
+    td.listing-mixed {
+      background: linear-gradient(to right, #1a6fa8 50%, #2E9B87 50%) !important;
+      color: #fff; font-weight: 700; cursor: pointer;
+      height: auto; padding: 2px 1px;
+    }
+
+    td.listing-rent {
+      background: #E07D3C !important;
+      color: #fff; font-weight: 700; cursor: pointer;
+      height: auto; padding: 2px 1px;
+    }
+
+    td.listing-sale-rent {
+      background: linear-gradient(to right, #1a6fa8 50%, #E07D3C 50%) !important;
+      color: #fff; font-weight: 700; cursor: pointer;
+      height: auto; padding: 2px 1px;
+    }
+
+    td.listing-lease-rent {
+      background: linear-gradient(to right, #2E9B87 50%, #E07D3C 50%) !important;
+      color: #fff; font-weight: 700; cursor: pointer;
+      height: auto; padding: 2px 1px;
+    }
+
+    td.listing-all {
+      background: linear-gradient(to right, #1a6fa8 33.33%, #2E9B87 33.33%, #2E9B87 66.66%, #E07D3C 66.66%) !important;
+      color: #fff; font-weight: 700; cursor: pointer;
+      height: auto; padding: 2px 1px;
+    }
+
+    td.listing-sale:active, td.listing-lease:active, td.listing-mixed:active,
+    td.listing-rent:active, td.listing-sale-rent:active, td.listing-lease-rent:active,
+    td.listing-all:active { opacity: 0.75; }
+
+    .cell-gbn  { display: block; font-size: 8px; font-weight: 600; opacity: 0.88; line-height: 1.3; }
+    .cell-price { display: block; font-size: 10px; font-weight: 800; line-height: 1.3; }
+
+    td.community { background: #ececec; color: #888; font-size: 9px; font-weight: 600; }
+
+    /* ── Popup ───────────────────────── */
+    #popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #popup-overlay.show { display: flex; }
+
+    #popup-box {
+      background: #fff;
+      border-radius: 16px;
+      width: 300px;
+      max-height: 72vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .popup-title { font-size: 15px; font-weight: 800; color: #1a1a1a; }
+
+    .popup-x {
+      background: none; border: none; cursor: pointer;
+      font-size: 18px; color: #aaa; line-height: 1; padding: 0 0 0 8px;
+    }
+
+    .popup-items { padding: 14px 18px 18px; }
+
+    .popup-item + .popup-item {
+      margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f0f0;
+    }
+
+    .popup-badges { display: flex; gap: 5px; margin-bottom: 10px; }
+
+    .txn-badge { border-radius: 5px; padding: 3px 9px; font-size: 11px; font-weight: 700; }
+    .txn-badge.sale  { background: #dbeeff; color: #1a6fa8; }
+    .txn-badge.lease { background: #e0f5f1; color: #2E9B87; }
+
+    .type-badge { border-radius: 5px; padding: 3px 9px; font-size: 11px; font-weight: 700; }
+    .type-badge.tA { background: #f0f0f2; color: #555; }
+
+    .popup-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+    .popup-label { font-size: 13px; color: #999; }
+    .popup-val { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+    .popup-val.pos { color: #E07D3C; }
+    .popup-val.neg { color: #2E9B87; }
+
+    .popup-total {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e0e0e0;
+    }
+
+    .popup-total-label { font-size: 13px; font-weight: 700; color: #555; }
+    .popup-total-val   { font-size: 18px; font-weight: 800; color: #1a6fa8; }
+
+    .popup-jeonse {
+      margin-top: 8px; background: #e8f9f4; border-radius: 9px;
+      padding: 9px 12px; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .popup-jeonse-label { font-size: 12px; color: #2E9B87; font-weight: 600; }
+    .popup-jeonse-val   { font-size: 15px; color: #2E9B87; font-weight: 800; }
+
+    .popup-close-wrap { padding: 0 18px 16px; display: flex; gap: 8px; }
+
+    .popup-close {
+      flex: 1; padding: 11px; border-radius: 9px; border: none;
+      background: #dbeeff; color: #1a6fa8; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+
+    .popup-close:active { background: #c5dff7; }
+
+    .popup-call {
+      flex: 1; padding: 11px; border-radius: 9px; border: none;
+      background: #1a6fa8; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+      text-decoration: none; text-align: center;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+
+    .popup-call:active { background: #155a8a; }
+
+    /* ── Filter bar ─────────────────── */
+    #filter-bar {
+      background: #fff;
+      padding: 8px 14px;
+      display: flex;
+      gap: 7px;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 49px;
+      z-index: 90;
+    }
+
+    .f-tab {
+      padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      cursor: pointer; background: #f0f0f2; color: #aaa; border: none; transition: all 0.15s;
+    }
+
+    .f-tab.active-all   { background: #1a1a1a; color: #fff; }
+    .f-tab.active-sale  { background: #1a6fa8; color: #fff; }
+    .f-tab.active-lease { background: #2E9B87; color: #fff; }
+    .f-tab.active-rent  { background: #E07D3C; color: #fff; }
+
+    /* ── 월세 섹션 ──────────────────── */
+    #wolse-section { padding: 12px 14px 8px; background: #fff; }
+
+    .wolse-title {
+      font-size: 12px; font-weight: 700; color: #E07D3C;
+      margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1.5px solid #fde8d8;
+    }
+
+    .wolse-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-radius: 10px; background: #fdf5f0;
+      margin-bottom: 7px; cursor: pointer; border-left: 3px solid #E07D3C;
+    }
+
+    .wolse-item:active { opacity: 0.75; }
+    .wolse-left { display: flex; align-items: center; gap: 7px; }
+    .wolse-floor { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+    .wolse-type { font-size: 11px; font-weight: 700; border-radius: 5px; padding: 2px 7px; }
+    .wolse-type.tA { background: #f0f0f2; color: #555; }
+    .wolse-price { text-align: right; }
+    .wolse-price-main { font-size: 13px; font-weight: 800; color: #E07D3C; }
+    .wolse-price-sub  { font-size: 11px; color: #aaa; margin-top: 1px; }
+
+    /* ── Bottom button ──────────────── */
+    .bottom-bar {
+      padding: 14px 16px 32px; background: #fff; border-top: 1px solid #eee;
+    }
+
+    .view-btn {
+      width: 100%; padding: 15px; border: 1.5px solid #1a6fa8; border-radius: 10px;
+      color: #1a6fa8; background: white; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+
+    .view-btn:active { background: #e8f2fa; }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="header-back" onclick="history.back()">‹</div>
+    <div class="header-title" id="pageTitle">—</div>
+    <div class="header-sub" id="pageSub"></div>
+    <a class="header-call" href="tel:010-6402-2328">
+      <span>📞</span>
+      <span class="call-text">바로 문의</span>
+    </a>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div id="filter-bar">
+    <button class="f-tab active-all" data-filter="all">전체</button>
+    <button class="f-tab" data-filter="sale">매매</button>
+    <button class="f-tab" data-filter="lease">전세</button>
+    <button class="f-tab" data-filter="rent">월세</button>
+  </div>
+
+  <div id="grid-wrap">
+    <table id="grid">
+      <thead><tr id="grid-head"></tr></thead>
+      <tbody id="grid-body"></tbody>
+    </table>
+  </div>
+
+  <div id="wolse-section" style="display:none">
+    <div class="wolse-title">월세 매물</div>
+    <div id="wolse-list"></div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="view-btn" id="viewBtn">전체 매물 보기</button>
+  </div>
+
+  <div id="popup-overlay">
+    <div id="popup-box">
+      <div class="popup-header">
+        <div class="popup-title" id="popup-title"></div>
+        <button class="popup-x" onclick="closePopup()">✕</button>
+      </div>
+      <div class="popup-items" id="popup-items"></div>
+      <div class="popup-close-wrap">
+        <button class="popup-close" onclick="closePopup()">닫기</button>
+        <a class="popup-call" href="tel:010-6402-2328">📞 바로 문의</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── 가격 포맷 ──────────────────────────────────────────────
+    function fmt(v) {
+      if (v == null) return '-';
+      const eok = Math.floor(v / 10000);
+      const rem = v % 10000;
+      if (eok === 0) return `${rem.toLocaleString()}만`;
+      if (rem === 0) return `${eok}억`;
+      return `${eok}억 ${rem.toLocaleString()}만`;
+    }
+
+    function fmtShort(v) {
+      if (v == null) return '';
+      if (v === 0) return '';
+      return (v / 10000).toFixed(1) + '억';
+    }
+
+    function parsePrice(s) {
+      if (!s || s.trim() === '') return null;
+      s = s.trim().replace(/,/g, '');
+      const m = s.match(/^(\d+)억\s*(\d+)?/);
+      if (m) return parseInt(m[1]) * 10000 + (m[2] ? parseInt(m[2]) : 0);
+      const n = parseInt(s);
+      return isNaN(n) ? null : n;
+    }
+
+    // ── 동별 건물 설정 ────────────────────────────────────────
+    // 동호수배치도 이미지 기준 층수 데이터 (방향은 추후 업데이트)
+    const buildings = {
+      101: {
+        units: [1, 2],
+        maxFloorByUnit: { 1: 31, 2: 31 },
+        getType: (u) => '115',
+        dirs: { 1: '남동', 2: '남동' },
+        special: {},
+      },
+      102: {
+        units: [1, 2, 3, 4, 5],
+        maxFloorByUnit: { 1: 31, 2: 31, 3: 31, 4: 31, 5: 31 },
+        getType: (u) => [0, '84A', '84A', '100', '84B', '84B'][u],
+        dirs: { 1: '남서', 2: '남서', 3: '남동', 4: '남동', 5: '남서' },
+        special: {},
+      },
+      103: {
+        units: [1, 2, 3, 4, 5],
+        maxFloorByUnit: { 1: 29, 2: 29, 3: 31, 4: 31, 5: 31 },
+        getType: (u) => [0, '84A', '84A', '100', '84B', '84B'][u],
+        dirs: { 1: '남동', 2: '남동', 3: '남동', 4: '남동', 5: '남서' },
+        special: {},
+      },
+      104: {
+        units: [1, 2, 3, 4, 5, 6],
+        maxFloorByUnit: { 1: 30, 2: 31, 3: 31, 4: 30, 5: 27, 6: 27 },
+        getType: (u) => [0, '84B', '84A', '84B', '84A', '78A', '78B'][u],
+        dirs: { 1: '남동', 2: '남동', 3: '남서', 4: '남서', 5: '남서', 6: '남서' },
+        special: {},
+      },
+      105: {
+        units: [1, 2, 3, 4, 5],
+        maxFloorByUnit: { 1: 20, 2: 20, 3: 20, 4: 20, 5: 20 },
+        getType: (u) => [0, '84B', '84B', '59', '59', '59'][u],
+        dirs: { 1: '남동', 2: '남동', 3: '남서', 4: '남서', 5: '남서' },
+        special: {},
+      },
+      106: {
+        units: [1, 2, 3, 4, 5, 6],
+        maxFloorByUnit: { 1: 31, 2: 31, 3: 31, 4: 29, 5: 29, 6: 29 },
+        getType: (u) => [0, '84B', '84A', '84A', '84B', '78A', '78B'][u],
+        dirs: { 1: '남동', 2: '남동', 3: '남동', 4: '남동', 5: '남서', 6: '남서' },
+        special: {},
+      },
+      107: {
+        units: [1, 2, 3, 4, 5, 6],
+        maxFloorByUnit: { 1: 27, 2: 29, 3: 31, 4: 29, 5: 31, 6: 31 },
+        getType: (u) => [0, '84B', '84A', '84A', '84B', '78A', '78B'][u],
+        dirs: { 1: '남동', 2: '남동', 3: '남동', 4: '남동', 5: '남서', 6: '남서' },
+        special: {},
+      },
+      108: {
+        units: [1, 2, 3, 4],
+        maxFloorByUnit: { 1: 18, 2: 17, 3: 16, 4: 17 },
+        getType: (u) => [0, '84A', '84A', '59', '59'][u],
+        dirs: { 1: '남동', 2: '남동', 3: '남동', 4: '남동' },
+        special: {},
+      },
+      109: {
+        units: [1, 2, 3, 4, 5, 6],
+        maxFloorByUnit: { 1: 14, 2: 14, 3: 17, 4: 18, 5: 22, 6: 22 },
+        getType: (u) => [0, '59', '59', '78A', '78B', '59', '59'][u],
+        dirs: { 1: '남동', 2: '남동', 3: '남동', 4: '남동', 5: '남서', 6: '남서' },
+        special: {},
+      },
+      110: {
+        units: [1, 2, 3, 4],
+        maxFloorByUnit: { 1: 17, 2: 17, 3: 17, 4: 17 },
+        getType: (u) => '36',
+        dirs: { 1: '', 2: '', 3: '', 4: '' },
+        special: {},
+      },
+    };
+
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/1hZtoBvNNNpiZacahHDhu0WPdGrikh-rqp9NXl3Zh4sQ/export?format=csv&gid=662711070';
+
+    function buildListingsData(text) {
+      const lines = text.trim().split('\n');
+      const data = {};
+      for (let i = 1; i < lines.length; i++) {
+        const cols = [];
+        let cur = '', inQ = false;
+        for (const ch of lines[i]) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        cols.push(cur.trim());
+        if (cols.length < 8) continue;
+        // col[1]=동, col[2]=gbn, col[3]=minPrice, col[5]=type, col[6]=floor, col[7]=direction
+        const dongVal = parseInt(String(cols[1]).replace(/동$/, '').trim());
+        if (!dongVal || isNaN(dongVal)) continue;
+        const floorVal = parseInt(String(cols[6]).trim());
+        if (!floorVal || isNaN(floorVal)) continue;
+        const gbn = cols[2].trim();
+        if (!gbn) continue;
+        const type = cols[5].trim();
+        if (!type) continue;
+        const dir = cols[7].trim().replace(/향$/, '');
+        if (!data[dongVal]) data[dongVal] = {};
+        if (!data[dongVal][floorVal]) data[dongVal][floorVal] = [];
+        if (gbn === '월세') {
+          const parts = String(cols[3]).split('/');
+          data[dongVal][floorVal].push({
+            gbn: '월세', type, dir,
+            deposit: parsePrice(parts[0]),
+            rent: parseInt(String(parts[1] || '0').replace(/,/g, '')),
+            price: null,
+          });
+        } else {
+          data[dongVal][floorVal].push({
+            gbn, type, dir,
+            price: parsePrice(cols[3]),
+            deposit: null, rent: null,
+          });
+        }
+      }
+      return data;
+    }
+
+    let listingsData = {};
+
+    const TYPE_CLASS = {
+      '36': 'type-36',
+      '59': 'type-59',
+      '78A': 'type-78A',
+      '78B': 'type-78B',
+      '84A': 'type-84A',
+      '84B': 'type-84B',
+      '100': 'type-100',
+      '115': 'type-115'
+    };
+
+    // URL 파라미터로 동 결정
+    const params = new URLSearchParams(location.search);
+    const dong = parseInt(params.get('dong') || '101');
+    const config = buildings[dong] || buildings[101];
+
+    document.getElementById('pageTitle').textContent = `${dong}동`;
+    document.getElementById('pageSub').textContent = '';
+    document.getElementById('viewBtn').textContent = '전체 매물 보기';
+    document.getElementById('viewBtn').onclick = () => { location.href = 'danji.html'; };
+
+    // 범례 생성
+    (function buildLegend() {
+      const el = document.getElementById('legend');
+      const items = [
+        { cls: 'tA', label: '일반' },
+        { sep: true },
+        { cls: 'sale', label: '매매' },
+        { cls: 'lease', label: '전세' },
+        { cls: 'mixed', label: '매매+전세' },
+      ];
+      items.forEach(item => {
+        if (item.sep) {
+          const s = document.createElement('span');
+          s.className = 'leg-sep';
+          s.textContent = '|';
+          el.appendChild(s);
+          return;
+        }
+        const wrap = document.createElement('span');
+        wrap.className = 'leg';
+        wrap.innerHTML = `<span class="leg-dot ${item.cls}"></span>${item.label}`;
+        el.appendChild(wrap);
+      });
+    })();
+
+    let currentFilter = 'all';
+
+    function buildGrid() {
+      const overallMaxFloor = Math.max(...config.units.map(u => config.maxFloorByUnit[u]));
+      const unitWidth = Math.floor((480 - 44) / config.units.length);
+      const dongListings = listingsData[dong] || {};
+
+      const headRow = document.getElementById('grid-head');
+      if (!headRow.hasChildNodes()) {
+        const floorTh = document.createElement('th');
+        floorTh.textContent = '층';
+        floorTh.style.width = '40px';
+        headRow.appendChild(floorTh);
+
+        config.units.forEach(u => {
+          const th = document.createElement('th');
+          const dir = config.dirs && config.dirs[u] ? config.dirs[u] : '';
+          const type = config.getType(u);
+          th.innerHTML = `${u}호<br><span style="font-size:9px;font-weight:800;color:#1a6fa8">${type}</span>${dir ? `<br><span style="font-size:7px;font-weight:400;color:#bbb">${dir}</span>` : ''}`;
+          th.style.width = unitWidth + 'px';
+          headRow.appendChild(th);
+        });
+      }
+
+      const tbody = document.getElementById('grid-body');
+      tbody.innerHTML = '';
+
+      for (let floor = overallMaxFloor; floor >= 1; floor--) {
+        const floorListings = dongListings[floor] || [];
+        const tr = document.createElement('tr');
+
+        const floorTd = document.createElement('td');
+        floorTd.className = 'floor-label';
+        floorTd.textContent = floor + 'F';
+        tr.appendChild(floorTd);
+
+        config.units.forEach(u => {
+          const td = document.createElement('td');
+
+          if (floor > config.maxFloorByUnit[u]) {
+            td.className = 'beyond-max';
+            tr.appendChild(td);
+            return;
+          }
+
+          const specialKey = `${floor}-${u}`;
+          if (config.special && config.special[specialKey]) {
+            td.className = 'community';
+            td.textContent = config.special[specialKey];
+            tr.appendChild(td);
+            return;
+          }
+
+          // 동+타입+층+방향 매칭
+          const unitDir = config.dirs[u];
+          const matched = floorListings.filter(listing =>
+            config.getType(u) === listing.type &&
+            (!unitDir || !listing.dir || listing.dir.startsWith(unitDir) || unitDir.startsWith(listing.dir))
+          );
+
+          const filtered = matched.filter(item => {
+            if (currentFilter === 'all')   return true;
+            if (currentFilter === 'sale')  return item.gbn === '매매';
+            if (currentFilter === 'lease') return item.gbn === '전세';
+            if (currentFilter === 'rent')  return item.gbn === '월세';
+            return true;
+          });
+
+          if (filtered.length > 0) {
+            const hasSale  = filtered.some(i => i.gbn === '매매');
+            const hasLease = filtered.some(i => i.gbn === '전세');
+            const hasRent  = filtered.some(i => i.gbn === '월세');
+
+            let cellClass, gbnLabel, priceItem, priceText;
+            if (currentFilter === 'rent' || (hasRent && !hasSale && !hasLease)) {
+              cellClass = 'listing-rent'; gbnLabel = '월세';
+              priceItem = filtered.find(i => i.rent) || filtered[0];
+              priceText = filtered.length > 1 ? filtered.length + '건' : (priceItem.rent ? priceItem.rent.toLocaleString() + '만' : '-');
+            } else if (currentFilter === 'sale' || (hasSale && !hasLease && !hasRent)) {
+              cellClass = 'listing-sale'; gbnLabel = '매매';
+              const saleItems = filtered.filter(i => i.gbn === '매매');
+              const minPrice = Math.min(...saleItems.map(i => i.price).filter(v => v != null));
+              priceText = saleItems.length > 1 ? saleItems.length + '건' : fmtShort(isFinite(minPrice) ? minPrice : null);
+            } else if (currentFilter === 'lease' || (!hasSale && hasLease && !hasRent)) {
+              cellClass = 'listing-lease'; gbnLabel = '전세';
+              const leaseItems = filtered.filter(i => i.gbn === '전세');
+              const minPrice = Math.min(...leaseItems.map(i => i.price).filter(v => v != null));
+              priceText = leaseItems.length > 1 ? leaseItems.length + '건' : fmtShort(isFinite(minPrice) ? minPrice : null);
+            } else if (hasSale && hasLease && hasRent) {
+              cellClass = 'listing-all'; gbnLabel = filtered.length + '건'; priceItem = filtered[0]; priceText = '';
+            } else if (hasSale && hasRent) {
+              cellClass = 'listing-sale-rent'; gbnLabel = filtered.length + '건'; priceItem = filtered[0]; priceText = '';
+            } else if (hasLease && hasRent) {
+              cellClass = 'listing-lease-rent'; gbnLabel = filtered.length + '건'; priceItem = filtered[0]; priceText = '';
+            } else {
+              cellClass = 'listing-mixed'; gbnLabel = filtered.length + '건'; priceItem = filtered[0]; priceText = '';
+            }
+
+            td.className = cellClass;
+            td.innerHTML = `<span class="cell-gbn">${gbnLabel}</span><span class="cell-price">${priceText}</span>`;
+            td.addEventListener('click', () => openPopup(floor, u, filtered));
+          } else {
+            td.className = TYPE_CLASS[config.getType(u)] || 'type-A';
+            td.textContent = floor;
+          }
+
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderWolse() {
+      const section = document.getElementById('wolse-section');
+      if (section) section.style.display = 'none';
+    }
+
+    (async function init() {
+      try {
+        const resp = await fetch(CSV_URL);
+        const text = await resp.text();
+        listingsData = buildListingsData(text);
+      } catch (e) {
+        console.error('데이터 로드 실패', e);
+      }
+      buildGrid();
+      renderWolse();
+    })();
+
+    document.querySelectorAll('#filter-bar .f-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        currentFilter = tab.dataset.filter;
+        document.querySelectorAll('#filter-bar .f-tab').forEach(t => { t.className = 'f-tab'; });
+        tab.className = `f-tab active-${currentFilter}`;
+        buildGrid();
+      });
+    });
+
+    function openPopup(floor, unit, items) {
+      const overlay = document.getElementById('popup-overlay');
+      const titleEl = document.getElementById('popup-title');
+      const itemsEl = document.getElementById('popup-items');
+      const count = items.length;
+      titleEl.textContent = `${dong}동 ${floor}층 ${unit}호 매물${count > 1 ? ' ' + count + '건' : ''}`;
+      itemsEl.innerHTML = '';
+
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'popup-item';
+
+        let badgesHtml = '<div class="popup-badges">';
+        if (item.gbn === '월세')  badgesHtml += `<span class="txn-badge" style="background:#fde8d8;color:#E07D3C">월세</span>`;
+        if (item.gbn === '매매')  badgesHtml += `<span class="txn-badge sale">매매</span>`;
+        if (item.gbn === '전세')  badgesHtml += `<span class="txn-badge lease">전세</span>`;
+        badgesHtml += `<span class="type-badge t${item.type}">${item.type}형</span></div>`;
+
+        let bodyHtml = '';
+        if (item.gbn === '월세') {
+          bodyHtml += `
+            <div class="popup-jeonse" style="background:#fdf0e6">
+              <span class="popup-jeonse-label" style="color:#E07D3C">보증금</span>
+              <span class="popup-jeonse-val" style="color:#E07D3C">${fmt(item.deposit)}</span>
+            </div>
+            <div class="popup-jeonse" style="background:#fdf0e6;margin-top:6px">
+              <span class="popup-jeonse-label" style="color:#E07D3C">월세</span>
+              <span class="popup-jeonse-val" style="color:#E07D3C">월 ${(item.rent ?? 0).toLocaleString()}만원</span>
+            </div>`;
+        } else if (item.gbn === '매매') {
+          bodyHtml += `
+            <div class="popup-total">
+              <span class="popup-total-label">매매가</span>
+              <span class="popup-total-val">${fmt(item.price)}</span>
+            </div>`;
+        } else if (item.gbn === '전세') {
+          bodyHtml += `
+            <div class="popup-jeonse">
+              <span class="popup-jeonse-label">전세금</span>
+              <span class="popup-jeonse-val">${fmt(item.price)}</span>
+            </div>`;
+        }
+
+        div.innerHTML = badgesHtml + bodyHtml;
+        itemsEl.appendChild(div);
+      });
+
+      overlay.classList.add('show');
+    }
+
+    function closePopup() {
+      document.getElementById('popup-overlay').classList.remove('show');
+    }
+
+    document.getElementById('popup-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closePopup();
+    });
+  </script>
+</body>
+
+</html>
