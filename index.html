@@ -866,10 +866,11 @@
         if (items.length > 0) {
           const min = Math.min(...items.map(x => x.rent));
           const max = Math.max(...items.map(x => x.rent));
-          const txt = min === max ? `월 ${fmtMan(min)}` : `월 ${fmtMan(min)} ~ ${fmtMan(max)}`;
-          html = `<div class="pr-row"><span class="pr-val">${txt}</span></div>`;
+          html = `
+            <div class="pr-row"><span class="pr-label">최저</span><span class="pr-val">월 ${fmtMan(min)}</span></div>
+            <div class="pr-row"><span class="pr-label">최고</span><span class="pr-val">월 ${fmtMan(max)}</span></div>`;
         } else if (csvLoaded) {
-          html = `<div class="pr-row"><span class="pr-empty">매물 없음</span></div>`;
+          html = `<div class="pr-empty">매물 없음</div>`;
         }
       } else {
         const prices = allListings
@@ -878,10 +879,11 @@
         if (prices.length > 0) {
           const min = Math.min(...prices);
           const max = Math.max(...prices);
-          const txt = min === max ? fmt(min) : `${fmt(min)} ~ ${fmt(max)}`;
-          html = `<div class="pr-row"><span class="pr-val">${txt}</span></div>`;
+          html = `
+            <div class="pr-row"><span class="pr-label">최저가</span><span class="pr-val">${fmt(min)}</span></div>
+            <div class="pr-row"><span class="pr-label">최고가</span><span class="pr-val">${fmt(max)}</span></div>`;
         } else if (csvLoaded) {
-          html = `<div class="pr-row"><span class="pr-empty">매물 없음</span></div>`;
+          html = `<div class="pr-empty">매물 없음</div>`;
         }
       }
 
