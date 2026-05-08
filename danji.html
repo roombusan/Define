@@ -119,13 +119,18 @@
       position: sticky;
       top: 92px;
       z-index: 89;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+    .type-bar::-webkit-scrollbar { display: none; }
     .t-tab {
       padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 700;
       cursor: pointer; background: #f0f0f2; color: #aaa; transition: all 0.15s;
+      white-space: nowrap; flex-shrink: 0;
     }
     .t-tab.active-tall { background: #1a1a1a; color: #fff; }
-    .t-tab.active-tA   { background: #1a6fa8; color: #fff; }
+    .t-tab.active      { background: var(--type-color, #1a6fa8); color: #fff; }
 
     .sort-select {
       margin-left: auto;
